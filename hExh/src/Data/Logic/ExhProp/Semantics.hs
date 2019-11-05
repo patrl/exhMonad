@@ -1,5 +1,3 @@
--- |
-
 module Data.Logic.ExhProp.Semantics where
 
 import Prelude hiding (lookup)

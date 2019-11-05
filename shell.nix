@@ -7,6 +7,7 @@ let
   ihaskellWithPackages = jupyter.kernels.iHaskellWith {
       name = "hExh";
       packages = p: with p; [
+        (p.callPackage ./hExh {})
         HaTeX
         ihaskell-hatex
       ];
