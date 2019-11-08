@@ -13,3 +13,10 @@ Currently, the easiest way to get started is via the [nix package manager](https
 In order to get a jupyter notebook up and running with ihaskell, simply run `nix-shell --command "jupyter lab"`. Note that this takes a very long time to build for the first time, but will be much faster on subsequent invocations.
 
 In order to build the library, `cd` into `hExh` and run `nix-shell` followed by `cabal new-build`.
+
+## TODO
+
+- Implement parser for propositional logic.
+- Implement first order logic.
+  It may be useful to consult existing implementations in the `folly` (http://hackage.haskell.org/package/Folly-0.2.0.1) and the `logic-classes` (http://hackage.haskell.org/package/logic-classes-1.4.7/docs/Data-Logic-Classes-FirstOrder.html) libraries on hackage.
+ - Implement modal logic.
