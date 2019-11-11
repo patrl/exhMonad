@@ -11,8 +11,3 @@ filterNonWeaker (Pointed expr alts) = Pointed
 
 exh :: Pointed Expr -> Assignment -> Bool
 exh (Pointed expr alts) vs = foldr ((&&) . not . (`interpret` vs)) (interpret expr vs) alts
-
--- test
-aOrBorC :: Expr
-aOrBorC = mkVar 'a' `Disjunction` mkVar 'b' `Disjunction` mkVar 'c'
-
