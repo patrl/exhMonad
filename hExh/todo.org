@@ -1,0 +1,3 @@
+#+TITLE: todo
+
+* TODO structural alternatives via recursively gathering all subtrees
