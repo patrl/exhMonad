@@ -1,15 +1,14 @@
 module Data.Logic.FoL.Formula where
 
--- newtype Var = Var Char
---     deriving (Eq, Ord)
+newtype Var = Var Char
+    deriving (Eq, Ord)
 
--- newtype Const = Const Char deriving (Eq, Ord)
+instance Show Var where
+  show (Var v) = show v
 
--- newtype Pred = Pred String deriving Eq
+data Term = Variable Var | Struct String [Term] deriving (Eq,Ord)
 
--- data Expr = Atomic Pred [Term]
---   | Conjunction Expr Expr
---   | Disjunction Expr Expr
---   | Negation Expr Expr
---   | Exists (Var -> Expr)
---   | Forall (Var -> Expr)
+instance Show Term where
+  show (Variable v) = show v
+  show (Struct s []) = s
+  show (Struct s ts) = s ++ show ts
