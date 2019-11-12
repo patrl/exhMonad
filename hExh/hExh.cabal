@@ -24,14 +24,14 @@ library
                      , Data.Logic.Prop.InnocentExclusion
                      , Data.Logic.Prop.InnocentInclusion
                      , Data.Logic.Prop.Parser
-                     , Data.Logic.Prop.PrettyPrint.LaTeX
+                     -- , Data.Logic.Prop.PrettyPrint.LaTeX
                      , Data.Logic.FoL.Formula
   -- other-modules:
   -- other-extensions:
   build-depends:       base
                      , containers
                      , parsec
-                     , HaTeX
+                     -- , HaTeX
   hs-source-dirs:      src
   default-language:    Haskell2010
 

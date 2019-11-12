@@ -9,9 +9,13 @@ import Data.Logic.Prop.Formula
 neg :: LaTeXC l => l
 neg = comm0 "neg"
 
+exh :: LaTeXC l => l
+exh = comm0 "Chi"
+
 toLaTeX :: Expr -> LaTeX
 toLaTeX (Variable (Var v)) = fromString [v]
 toLaTeX (Negation expr) = autoParens $ neg <> toLaTeX expr
+toLaTeX (Exh expr) = autoParens $ exh <> toLaTeX expr
 toLaTeX (Conjunction expr1 expr2) = autoParens $ toLaTeX expr1 `wedge` toLaTeX expr2
 toLaTeX (Disjunction expr1 expr2) = autoParens $ toLaTeX expr1 `vee` toLaTeX expr2
 

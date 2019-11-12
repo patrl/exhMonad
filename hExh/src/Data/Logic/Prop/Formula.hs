@@ -9,6 +9,7 @@ mkVar = Variable . Var
 
 data Expr = Variable Var
           | Negation Expr
+          | Exh Expr
           | Conjunction Expr Expr
           | Disjunction Expr Expr
           deriving Eq
@@ -26,5 +27,6 @@ showBC = showBinaryConnective show
 instance Show Expr where
   show (Variable name        ) = show name
   show (Negation expr        ) = '~' : show expr
+  show (Exh      expr        ) = 'O' : show expr
   show (Conjunction exp1 exp2) = showBC "&&" exp1 exp2
   show (Disjunction exp1 exp2) = showBC "||" exp1 exp2
