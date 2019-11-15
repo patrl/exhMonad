@@ -20,7 +20,6 @@ library
                      , Data.Logic.Prop.Formula
                      , Data.Logic.Prop.Semantics
                      , Data.Logic.Prop.StructuralAlts
-                     , Data.Logic.Prop.MinimalWorlds
                      , Data.Logic.Prop.InnocentExclusion
                      , Data.Logic.Prop.InnocentInclusion
                      , Data.Logic.Prop.Parser

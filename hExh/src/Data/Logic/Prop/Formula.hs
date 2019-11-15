@@ -1,12 +1,16 @@
 -- | syntax for wff of propositional logic
 module Data.Logic.Prop.Formula where
 
+-- | Our datatype for variables.
 newtype Var = Var Char
     deriving (Eq, Ord)
 
+-- | A helper function for turning characters into variables.
 mkVar :: Char -> Expr
 mkVar = Variable . Var
 
+-- | Our datatype for wff of exhProp (propositional logic with an exhaustivity operator).
+-- N.b. that we treat the exhaustivity operator as an expression of the object language.
 data Expr = Variable Var
           | Negation Expr
           | Exh Expr

@@ -19,6 +19,7 @@ let
       directory = jupyter.mkDirectoryWith {
         extensions = [
           "jupyterlab-ihaskell"
+          # "jupyterlab_bokeh"
         ];
       };
     };
