@@ -51,8 +51,8 @@ values :: Expr -> [Bool]
 values expr = map (interpret expr) (assignments expr)
 
 -- | Determines whether an expression is contradictory.
-isContradiction :: Expr -> Bool
-isContradiction = not . or . values
+-- isContradiction :: Expr -> Bool
+-- isContradiction = not . or . values
 
 proposition :: Expr -> [Assignment] -> [Assignment]
 proposition expr model = [ w | w <- model, interpret expr w ]
@@ -79,6 +79,9 @@ exhMw (Pointed p exprs) w = interpret p w && null
 
 isPropersubset :: Eq a => [a] -> [a] -> Bool
 isPropersubset x y = all (`elem` y) x && x /= y
+
+-- >>> subExprs (mkVar 'a' `Disjunction` mkVar 'b')
+-- [a,b]
 
 -- >>> values (Exh (mkVar 'a' `Disjunction` mkVar 'b'))
 -- [False,True,True,False]

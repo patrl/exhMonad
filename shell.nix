@@ -18,7 +18,7 @@ let
       kernels = [ ihaskellWithPackages ];
       directory = jupyter.mkDirectoryWith {
         extensions = [
-          "jupyterlab-ihaskell"
+          # "jupyterlab-ihaskell"
           # "jupyterlab_bokeh"
         ];
       };
