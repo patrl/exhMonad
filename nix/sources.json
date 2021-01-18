@@ -11,18 +11,6 @@
         "url": "https://github.com/input-output-hk/haskell.nix/archive/22ad57c7e78a6bf409738efdd87a2c23d13bfabb.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
-    "iohk-nixpkgs": {
-        "branch": "iohk-18.09",
-        "description": "Nix Packages collection",
-        "homepage": null,
-        "owner": "input-output-hk",
-        "repo": "nixpkgs",
-        "rev": "55db2a95eade4a80fadf85ae7fce7fa293f87f50",
-        "sha256": "0sll5drg4xrq4ap2lwpw9sr11003m0ampw0fs1xp7qgpi4dkp2rr",
-        "type": "tarball",
-        "url": "https://github.com/input-output-hk/nixpkgs/archive/55db2a95eade4a80fadf85ae7fce7fa293f87f50.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "niv": {
         "branch": "master",
         "description": "Easy dependency management for Nix projects",
