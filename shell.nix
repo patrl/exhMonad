@@ -16,12 +16,7 @@ let
   jupyterlabWithKernels =
     jupyter.jupyterlabWith {
       kernels = [ ihaskellWithPackages ];
-      directory = jupyter.mkDirectoryWith {
-        extensions = [
-          # "jupyterlab-ihaskell"
-          # "jupyterlab_bokeh"
-        ];
-      };
+      directory = ./jupyterlab;
     };
 in
   jupyterlabWithKernels.env
