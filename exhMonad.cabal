@@ -16,6 +16,7 @@ library
   exposed-modules:
       Data.Logic.Classical
       Data.Logic.FirstOrder
+      Data.Logic.Parser
   other-modules:
       Paths_exhMonad
   hs-source-dirs:
