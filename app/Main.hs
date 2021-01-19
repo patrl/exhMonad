@@ -1,8 +1,9 @@
 module Main where
 
-import qualified MyLib (someFunc)
+import Brick
+
+ui :: Widget ()
+ui = str "Hello, world!"
 
 main :: IO ()
-main = do
-  putStrLn "Hello, Haskell!"
-  MyLib.someFunc
+main = simpleMain ui
