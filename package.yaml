@@ -1,0 +1,40 @@
+spec-version: 0.30.0
+name: exhMonad 
+author: Patrick D. Elliott
+version: 0.0.0
+maintainer: patrick.d.elliott@gmail.com
+license: BSD3
+
+build-type: Simple
+
+dependencies:
+- { name: "base", version: '>=4.14.1.0' }
+
+default-extensions:
+  - GADTs
+  - StandaloneDeriving
+  - ScopedTypeVariables
+  - RankNTypes
+  - QuantifiedConstraints
+  - TypeApplications
+  - TypeOperators
+  - MultiParamTypeClasses
+  - ConstraintKinds
+  - DataKinds
+  - PolyKinds
+  - KindSignatures
+  - FlexibleInstances
+  - FlexibleContexts
+
+library:
+  source-dirs: src
+  ghc-options:
+    - -Wall
+    - -Wcompat
+    - -Wincomplete-record-updates
+    - -Wincomplete-uni-patterns
+    - -Wredundant-constraints
+
+executable:
+  source-dirs: app
+  main: Main.hs
