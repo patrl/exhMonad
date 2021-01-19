@@ -1,5 +1,6 @@
 module Data.Logic.Classical where
 
+import Data.List (nub)
 -- This datatype characterizes the set of wffs of classical logic
 -- I'm factoring out binary and unary operators to make this more readily extensible.
 data Expr = Var String | Unary UOp Expr | Binary BOp Expr Expr
@@ -26,4 +27,10 @@ instance Show BOp where
 instance Show UOp where
   show Not = "~"
 
--- >>> (Binary And (Var "hello") (Var "there"))
+---
+
+-- list all of the distinct variables, removing duplicates.
+variables :: Expr -> [String]
+variables (Unary _ expr) = variables expr
+variables (Binary _ expr1 expr2) = nub $ variables expr1 ++ variables expr2
+variables (Var v) = [v]

@@ -59,7 +59,5 @@ parseInput = do
   eof
   return ex
 
-myParser = parse parseInput ""
-
 -- >>> parse parseInput "" "~ p | q & r"
 -- Right (~ (p) | (q & r))
