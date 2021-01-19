@@ -14,7 +14,7 @@ build-type:     Simple
 
 library
   exposed-modules:
-      MyLib
+      Data.Logic.Classical
   other-modules:
       Paths_exhMonad
   hs-source-dirs:
@@ -23,6 +23,7 @@ library
   ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
   build-depends:
       base >=4.14.1.0
+    , containers
   default-language: Haskell2010
 
 executable exhMonad
@@ -34,4 +35,5 @@ executable exhMonad
   default-extensions: GADTs StandaloneDeriving ScopedTypeVariables RankNTypes QuantifiedConstraints TypeApplications TypeOperators MultiParamTypeClasses ConstraintKinds DataKinds PolyKinds KindSignatures FlexibleInstances FlexibleContexts
   build-depends:
       base >=4.14.1.0
+    , containers
   default-language: Haskell2010
