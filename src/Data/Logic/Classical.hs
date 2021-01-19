@@ -26,4 +26,4 @@ instance Show BOp where
 instance Show UOp where
   show Not = "~"
 
--- $> :t And
+-- >>> (Binary And (Var "hello") (Var "there"))

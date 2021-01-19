@@ -1,54 +1,65 @@
 module Data.Logic.Parser where
 
-import Data.Logic.Classical ( BOp(Or, And), Expr(..), UOp(Not) )
+-- a parser for expressions of classical logic.
+
+import Control.Monad (liftM)
+import Data.Logic.Classical
+  ( BOp (And, Or),
+    Expr (..),
+    UOp (Not),
+  )
 import Text.ParserCombinators.Parsec
-    ( alphaNum,
-      char,
-      letter,
-      spaces,
-      string,
-      (<?>),
-      many,
-      parse,
-      ParseError,
-      Parser )
 import Text.ParserCombinators.Parsec.Expr
-    ( buildExpressionParser,
-      Assoc(AssocLeft),
-      Operator(Prefix, Infix) )
+import Text.ParserCombinators.Parsec.Language
+import qualified Text.ParserCombinators.Parsec.Token as Tok
 
-parseExpr :: String -> Either ParseError Expr
-parseExpr = parse expr ""
 
--- note this doesn't currently handle whitespace
-expr :: Parser Expr
-expr = buildExpressionParser table parseVar <?> "expression"
+languageDef =
+  emptyDef
+    { Tok.identStart = letter,
+      Tok.identLetter = alphaNum,
+      Tok.reservedOpNames = ["&", "|", "~"]
+    }
 
-parseVar :: Parser Expr
-parseVar = do
-  c <- letter
-  cs <- many alphaNum
-  return $ Var (c : cs)
+lexer :: Tok.TokenParser ()
+lexer = Tok.makeTokenParser languageDef
 
-parens :: Parser a -> Parser a
-parens p = do
-  char '(' >> spaces
-  x <- p
-  _ <- spaces >> char ')'
-  return x
+reservedOp :: String -> Parser ()
+reservedOp = Tok.reservedOp lexer
 
-table :: [[Operator Char st Expr]]
-table =
-  [ [prefix "~" (Unary Not)],
-    [binary "&" (Binary And) AssocLeft],
-    [binary "|" (Binary Or) AssocLeft]
+identifier :: Parser String
+identifier = Tok.identifier lexer
+
+parens :: Parser Expr -> Parser Expr
+parens = Tok.parens lexer
+
+whiteSpace :: Parser ()
+whiteSpace = Tok.whiteSpace lexer
+
+parseExpr :: Parser Expr
+parseExpr = buildExpressionParser operators parseVariable
+
+parseVariable :: Parser Expr
+parseVariable =
+  parens parseExpr
+    <|> fmap Var identifier
+
+operators :: [[Operator Char () Expr]]
+operators =
+  [ [ Prefix (reservedOp "~" >> return (Unary Not)),
+      Infix (reservedOp "&" >> return (Binary And)) AssocRight,
+      Infix (reservedOp "|" >> return (Binary Or)) AssocRight
+    ]
   ]
 
-binary :: String -> (a -> a -> a) -> Assoc -> Operator Char st a
-binary name fun = Infix (do _ <- string name; return fun)
+parseInput :: Parser Expr
+parseInput = do
+  whiteSpace
+  ex <- parseExpr
+  eof
+  return ex
 
-prefix :: String -> (a -> a) -> Operator Char st a
-prefix name fun = Prefix (do _ <- string name; return fun)
+myParser = parse parseInput ""
 
--- >>> parseExpr "ϕ|ψ|ψ"
--- Right ((ϕ | ψ) | ψ)
+-- >>> parse parseInput "" "~ p | q & r"
+-- Right (~ (p) | (q & r))
