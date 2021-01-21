@@ -4,6 +4,11 @@
 
 module Data.Logic.Classical.Syntax where
 
+data Ops = Op {
+                unary :: UOp
+               , binary :: BOp
+               } deriving Eq
+
 -- An Abstract Syntax Tree for logical expressions
 data Expr a = Simple a | Unary UOp (Expr a) | Binary BOp (Expr a) (Expr a) deriving (Eq, Foldable, Traversable, Functor)
 
@@ -19,16 +24,15 @@ toExpr c = Simple $ Var c
 instance Show Var where
   show (Var c) = [c]
 
-data UOp = Not deriving (Eq)
+data UOp = Not | Exh deriving (Eq)
 
-interpretU :: UOp -> (Bool -> Bool)
-interpretU Not = not
+uOps :: [UOp]
+uOps = [Not,Exh]
 
 data BOp = And | Or deriving (Eq)
 
-interpretB :: BOp -> (Bool -> Bool -> Bool)
-interpretB And = (&&)
-interpretB Or = (||)
+bOps :: [BOp]
+bOps = [And,Or]
 
 instance Show CExpr where
   show (Simple v) = show v

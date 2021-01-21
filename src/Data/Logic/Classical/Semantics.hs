@@ -1,22 +1,20 @@
 module Data.Logic.Classical.Semantics where
 
-import Control.Monad (replicateM)
+import Control.Monad (replicateM,foldM,liftM2)
 import Data.Logic.Classical.Syntax
-  ( BExpr,
-    BOp (And, Or),
-    CExpr,
-    Expr (Binary, Simple, Unary),
-    Var,
-    interpretB,
-    interpretU,
-    toExpr,
-  )
 import qualified Data.Map as M
 import Data.Maybe (fromJust)
 import qualified Data.Set as S
 import qualified Text.Layout.Table as T
 
 type Assignment = M.Map Var Bool
+
+interpretU :: UOp -> (Bool -> Bool)
+interpretU Not = not
+
+interpretB :: BOp -> (Bool -> Bool -> Bool)
+interpretB And = (&&)
+interpretB Or = (||)
 
 -- returns a set of the distinct variables in an expression of classical logic.
 variables :: CExpr -> S.Set Var
@@ -35,6 +33,10 @@ assignments = universe . variables
 --- (ii) evaluating the resulting boolean expression
 evaluate :: Assignment -> CExpr -> Maybe Bool
 evaluate g expr = evaluateB <$> toBoolExpr g expr
+
+-- This is a placeholder
+evaluateExh :: Assignment -> CExpr -> Maybe Bool
+evaluateExh g (Unary Exh p) = liftM2 (&&) (evaluateExh g p) (Just True)
 
 -- Traverses an expression of classical logic, and replaces variables with boolean values.
 toBoolExpr :: Assignment -> CExpr -> Maybe BExpr
@@ -57,15 +59,43 @@ truthTable expr =
         T.def
         ( T.rowG
             <$> ((show <$> vs) ++ [show expr]) : -- header row
-            [outputs g ++ [show . fromJust $ evaluate g expr] | g <- (S.toList $ assignments expr)] -- values for each row
+            [outputs g ++ [show . fromJust $ evaluate g expr] | g <- S.toList $ assignments expr] -- values for each row
         )
 
 outputs :: Assignment -> [String]
 outputs g = [show t | (_, t) <- M.toList g]
+
+-- The following only work due to the excluded middle
+isTautology :: CExpr -> Bool
+isTautology expr =
+  Just False `notElem` ([evaluate g expr | g <- S.toList $ assignments expr])
+
+isContradiction :: CExpr -> Bool
+isContradiction expr =
+  Just True `notElem` ([evaluate g expr | g <- S.toList $ assignments expr])
+
+isContingent :: CExpr -> Bool
+isContingent expr = and [ t `elem` [evaluate g expr | g <- S.toList $ assignments expr] | t <- [Just True,Just False]]
+
+
+-- -- $> putStrLn $ truthTable testExpr
 
 testExpr :: CExpr
 testExpr = Binary Or (toExpr 'p') (Binary Or (toExpr 'q') (toExpr 'r'))
 
 -- $> testExpr
 
--- $> putStrLn $ truthTable testExpr
+-- $> isTautology testExpr
+
+-- $> isContingent testExpr
+
+tautTest :: CExpr
+tautTest = Binary Or (toExpr 'p') (Unary Not (toExpr 'p'))
+
+-- $> tautTest
+
+-- $> isTautology tautTest
+
+-- $> isContingent testExpr
+
+-- TODO write function testing semantic equivalence
