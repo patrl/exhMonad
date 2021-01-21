@@ -1,63 +1,44 @@
 module Data.Logic.Classical.Parser where
 
--- a parser for expressions of classical logic.
+import           Data.Functor.Identity          ( Identity )
+import           Data.Logic.Classical.Syntax
+import           Text.Parsec.Language           ( emptyDef )
+import           Text.ParserCombinators.Parsec
+import           Text.ParserCombinators.Parsec.Expr
+import qualified Text.ParserCombinators.Parsec.Token
+                                               as P
 
--- import Control.Monad (liftM)
--- import Data.Logic.Classical
---   ( BOp (And, Or),
---     Expr (..),
---     UOp (Not),
---   )
--- import Text.ParserCombinators.Parsec
--- import Text.ParserCombinators.Parsec.Expr
--- import Text.ParserCombinators.Parsec.Language
--- import qualified Text.ParserCombinators.Parsec.Token as Tok
+lexer :: P.GenTokenParser String u Identity
+lexer = P.makeTokenParser emptyDef
+parens :: Parser CExpr -> Parser CExpr
+parens = P.parens lexer
+reservedOp :: String -> Parser ()
+reservedOp = P.reservedOp lexer
 
+parseSimple :: Parser CExpr
+parseSimple = parens expr <|> Simple . Var <$> alphaNum
 
--- languageDef =
---   emptyDef
---     { Tok.identStart = letter,
---       Tok.identLetter = alphaNum,
---       Tok.reservedOpNames = ["&", "|", "~"]
---     }
+table :: [[Operator Char () CExpr]]
+table =
+    [ [unary "~" (Unary Not), unary "O" (Unary Exh)]
+    , [binary "&" (Binary And) AssocRight, binary "|" (Binary Or) AssocRight]
+    ]
 
--- lexer :: Tok.TokenParser ()
--- lexer = Tok.makeTokenParser languageDef
+binary :: String -> (CExpr -> CExpr -> CExpr) -> Assoc -> Operator Char () CExpr
+binary name fun = Infix $ do
+    reservedOp name
+    return fun
 
--- reservedOp :: String -> Parser ()
--- reservedOp = Tok.reservedOp lexer
+unary :: String -> (CExpr -> CExpr) -> Operator Char () CExpr
+unary name fun = Prefix $ do
+        reservedOp name
+        return fun
 
--- identifier :: Parser String
--- identifier = Tok.identifier lexer
+expr :: Parser (CExpr)
+expr = buildExpressionParser table parseSimple
 
--- parens :: Parser Expr -> Parser Expr
--- parens = Tok.parens lexer
+parseExpr :: [Char] -> Either ParseError (Expr Var)
+parseExpr = parse expr ""
 
--- whiteSpace :: Parser ()
--- whiteSpace = Tok.whiteSpace lexer
-
--- parseExpr :: Parser Expr
--- parseExpr = buildExpressionParser operators parseVariable
-
--- parseVariable :: Parser Expr
--- parseVariable =
---   parens parseExpr
---     <|> fmap Var identifier
-
--- operators :: [[Operator Char () Expr]]
--- operators =
---   [ [ Prefix (reservedOp "~" >> return (Unary Not)),
---       Infix (reservedOp "&" >> return (Binary And)) AssocRight,
---       Infix (reservedOp "|" >> return (Binary Or)) AssocRight
---     ]
---   ]
-
--- parseInput :: Parser Expr
--- parseInput = do
---   whiteSpace
---   ex <- parseExpr
---   eof
---   return ex
-
--- -- >>> parse parseInput "" "~ p | q & r"
--- -- Right (~ (p) | (q & r))
+-- >>> parseExpr "O(a|b)"
+-- Right 𝒪 ((a ∨ b))
