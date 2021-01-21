@@ -24,10 +24,10 @@ toExpr c = Simple $ Var c
 instance Show Var where
   show (Var c) = [c]
 
-data UOp = Not | Exh deriving (Eq)
+data UOp = Not deriving (Eq)
 
 uOps :: [UOp]
-uOps = [Not,Exh]
+uOps = [Not]
 
 data BOp = And | Or deriving (Eq)
 
