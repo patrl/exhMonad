@@ -14,11 +14,10 @@ build-type:     Simple
 
 library
   exposed-modules:
-      Data.Logic.Classical
+      Data.Logic.Classical.Alternatives
       Data.Logic.Classical.Parser
       Data.Logic.Classical.Semantics
       Data.Logic.Classical.Syntax
-      Data.Logic.FirstOrder
   other-modules:
       Paths_exhMonad
   hs-source-dirs:
