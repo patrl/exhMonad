@@ -7,7 +7,8 @@ import Data.Logic.Classical.Syntax
 alts :: Expr a -> [Expr a]
 alts (Simple a  ) = [Simple a]
 alts (Unary op a) = [ Unary op' b | b <- alts a, op' <- altUOps op]
-alts (Binary op a b) = [ Binary op' alt_a alt_b | alt_a <- alts a, alt_b <- alts b, op' <- altBOps op]
+alts (Binary And a b) = [ Binary Or alt_a alt_b | alt_a <- a:alts a, alt_b <- b:alts b]
+alts (Binary Or a b) = [ Binary And alt_a alt_b | alt_a <- a:alts a, alt_b <- b:alts b]
 
 altBOps :: BOp -> [BOp]
 altBOps _ = [And,Or]
@@ -20,7 +21,4 @@ testExpr :: Expr Var
 testExpr = Binary Or (toExpr 'p') (Binary Or (toExpr 'q') (toExpr 'r'))
 
 -- >>> alts testExpr
--- [(p ∧ (q ∧ r)),(p ∨ (q ∧ r)),(p ∧ (q ∨ r)),(p ∨ (q ∨ r))]
-
--- >>> altsExcl testExpr
--- [(p ∧ (q ∧ r)),(p ∨ (q ∧ r)),(p ∧ (q ∨ r))]
+-- [(p ∧ (q ∨ r)),(p ∧ (q ∧ r)),(p ∧ (q ∧ r)),(p ∧ (q ∧ r)),(p ∧ (q ∧ r)),(p ∧ (q ∨ r)),(p ∧ (q ∧ r)),(p ∧ (q ∧ r)),(p ∧ (q ∧ r)),(p ∧ (q ∧ r))]
