@@ -14,7 +14,10 @@ import           Data.Maybe                     ( fromJust )
 import           Data.Set                hiding ( foldr )
 import qualified Text.Layout.Table             as T
 
+import Data.Logic.Classical.Parser (parseExpr)
+
 type Assignment = M.Map Var Bool
+
 
 -- Interpret the logical operators of classical logic as haskell's boolean operators
 interpretB :: BOp -> (Bool -> Bool -> Bool)
@@ -82,38 +85,57 @@ outputs g = [ show t | (_, t) <- M.toList g ]
 testExpr :: Expr Var
 testExpr = Binary Or (toExpr 'p') (Binary And (toExpr 'q') (toExpr 'r'))
 
--- The following only work due to the excluded middle
 isTautology :: CExpr -> Bool
-isTautology expr = all (\t -> t == Just True)
-                       ([ evaluate g expr | g <- toList $ assignments expr ])
+isTautology expr = let gs = assignments expr in
+  gs == verifiers expr gs
 
+-- >>> isTautology <$> (parseExpr "p|(~p)")
+-- Right True
+
+-- >>> isTautology <$> (parseExpr "p&(~p)")
+-- Right False
+
+-- The following relies on the excluded middle
 isContradiction :: CExpr -> Bool
-isContradiction expr = all
-  (\t -> t == Just False)
-  ([ evaluate g expr | g <- toList $ assignments expr ])
+isContradiction expr = verifiers expr (assignments expr) == empty
+
+
+-- >>> isContradiction <$> (parseExpr "p&(~p)")
+-- Right True
 
 isContingent :: CExpr -> Bool
-isContingent expr = and
-  [ t `elem` [ evaluate g expr | g <- toList $ assignments expr ]
-  | t <- [Just True, Just False]
-  ]
+isContingent expr = not (isTautology expr || isContradiction expr)
+
+-- >>> isContingent <$> (parseExpr "p|p")
+-- Right True
 
 isEquivalent :: CExpr -> CExpr -> Bool
 isEquivalent expr1 expr2 =
   let vs = variables expr1 `union` variables expr2
       gs = universe vs
-  in  [ evaluate g expr1 | g <- toList gs ]
-      == [ evaluate g expr2 | g <- toList gs ]
+  in  verifiers expr1 gs == verifiers expr2 gs
 
--- The classical notion of logical consequence; checks that the assignments that verify expr1 are a subset
--- of the assignments that verify expr2.
 entails :: CExpr -> CExpr -> Bool
 expr1 `entails` expr2 =
-  let
-    vs = variables expr1 `union` variables expr2
-    gs = universe vs
-  in
-    (fromList . concat)
-        [ [ g | evaluate g expr1 == Just True ] | g <- toList gs ]
-      `isSubsetOf` (fromList . concat)
-                     [ [ g | evaluate g expr2 == Just True ] | g <- toList gs ]
+  let vs = variables expr1 `union` variables expr2
+      gs = universe vs
+  in  verifiers expr1 gs `isSubsetOf` verifiers expr2 gs
+
+verifiers :: CExpr -> Set Assignment -> Set Assignment
+verifiers expr gs = fromList $ do
+  g <- toList gs
+  [ g | evaluate g expr == Just True ]
+
+printTruthTable :: String -> IO ()
+printTruthTable s = case parseExpr s of
+  Left _ -> putStrLn "couldn't parse expression"
+  (Right expr) -> putStrLn $ truthTable expr
+
+-- >>> testExpr
+-- (p ∨ (q ∧ r))
+
+-- >>> assignments testExpr
+-- fromList [fromList [(p,False),(q,False),(r,False)],fromList [(p,False),(q,False),(r,True)],fromList [(p,False),(q,True),(r,False)],fromList [(p,False),(q,True),(r,True)],fromList [(p,True),(q,False),(r,False)],fromList [(p,True),(q,False),(r,True)],fromList [(p,True),(q,True),(r,False)],fromList [(p,True),(q,True),(r,True)]]
+
+-- >>> verifiers testExpr (assignments testExpr)
+-- fromList [fromList [(p,False),(q,True),(r,True)],fromList [(p,True),(q,False),(r,False)],fromList [(p,True),(q,False),(r,True)],fromList [(p,True),(q,True),(r,False)],fromList [(p,True),(q,True),(r,True)]]
