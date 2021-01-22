@@ -5,7 +5,7 @@
 module Data.Logic.Classical.Syntax where
 
 -- An Abstract Syntax Tree for logical expressions
-data Expr a = Simple a | Unary UOp (Expr a) | Binary BOp (Expr a) (Expr a) deriving (Eq, Foldable, Traversable, Functor)
+data Expr a = Simple a | Unary UOp (Expr a) | Binary BOp (Expr a) (Expr a) deriving (Eq, Ord, Foldable, Traversable, Functor)
 
 type CExpr = Expr Var
 
@@ -19,12 +19,12 @@ toExpr c = Simple $ Var c
 instance Show Var where
   show (Var c) = [c]
 
-data UOp = Not | Exh deriving (Eq)
+data UOp = Not | Exh deriving (Eq,Ord)
 
 uOps :: [UOp]
 uOps = [Not,Exh]
 
-data BOp = And | Or deriving (Eq)
+data BOp = And | Or deriving (Eq,Ord)
 
 bOps :: [BOp]
 bOps = [And,Or]
