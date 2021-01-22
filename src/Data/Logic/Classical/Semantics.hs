@@ -7,14 +7,26 @@ import           Control.Applicative            ( liftA2 )
 import           Control.Monad                  ( replicateM )
 import           Data.Logic.Classical.Alternatives
                                                 ( alts )
-import           Data.Logic.Classical.Syntax
+import           Data.Logic.Classical.Syntax    ( BOp(..)
+                                                , CExpr
+                                                , Expr(..)
+                                                , UOp(Exh, Not)
+                                                , Var
+                                                , toExpr
+                                                )
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( fromJust )
--- import qualified Data.Set                      as S
-import           Data.Set                hiding ( foldr )
+import           Data.Set                       ( Set
+                                                , empty
+                                                , fromList
+                                                , insert
+                                                , isSubsetOf
+                                                , toList
+                                                , union
+                                                )
 import qualified Text.Layout.Table             as T
 
-import Data.Logic.Classical.Parser (parseExpr)
+import           Data.Logic.Classical.Parser    ( parseExpr )
 
 type Assignment = M.Map Var Bool
 
@@ -86,8 +98,7 @@ testExpr :: Expr Var
 testExpr = Binary Or (toExpr 'p') (Binary And (toExpr 'q') (toExpr 'r'))
 
 isTautology :: CExpr -> Bool
-isTautology expr = let gs = assignments expr in
-  gs == verifiers expr gs
+isTautology expr = let gs = assignments expr in gs == verifiers expr gs
 
 -- >>> isTautology <$> (parseExpr "p|(~p)")
 -- Right True
@@ -128,7 +139,7 @@ verifiers expr gs = fromList $ do
 
 printTruthTable :: String -> IO ()
 printTruthTable s = case parseExpr s of
-  Left _ -> putStrLn "couldn't parse expression"
+  Left _       -> putStrLn "couldn't parse expression"
   (Right expr) -> putStrLn $ truthTable expr
 
 -- >>> testExpr
