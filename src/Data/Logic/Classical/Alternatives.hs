@@ -7,6 +7,8 @@ import           Data.Logic.Classical.Syntax    ( BOp(..)
                                                 , toExpr
                                                 )
 
+import Data.Logic.Classical.Parser (parseExpr)
+
 
 isSimple :: Expr a -> Bool
 isSimple (Simple _) = True
