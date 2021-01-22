@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedLists #-}
-
 module Data.Logic.Classical.Alternatives where
 
 import           Data.Logic.Classical.Syntax    ( BOp(..)
@@ -37,7 +35,7 @@ alts2 (Binary op a b) =
     , op'   <- altBOps op
     ]
 
--- efficiently computes Sauerland alternatives; closure of a formula over sub-formulas and substitution of binary operators
+-- efficiently computes Sauerland alternatives; closure of a formula under sub-formulas and substitution of binary operators
 altsS :: Expr a -> [Expr a]
 altsS expr
     | (Simple a) <- expr                       = [Simple a]
