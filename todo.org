@@ -2,4 +2,5 @@
 
 * TODO some abuse of ~Maybe~ could be improved by using the /parse don't validate/ strategy
 * TODO parser doesn't handle white space yet
+* TODO generalize the logic AST using ~compdata~
 * /Everything else/
