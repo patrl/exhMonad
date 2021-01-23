@@ -17,6 +17,8 @@ library
       Data.Logic.Classical.Alternatives
       Data.Logic.Classical.Parser
       Data.Logic.Classical.Semantics
+      Data.Logic.Classical.Semantics.InnocentExclusion
+      Data.Logic.Classical.Semantics.MinimalWorlds
       Data.Logic.Classical.Syntax
   other-modules:
       Paths_exhMonad
