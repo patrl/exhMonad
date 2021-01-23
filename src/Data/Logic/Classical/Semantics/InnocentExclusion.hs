@@ -1,38 +1,56 @@
+{-# LANGUAGE OverloadedLists #-}
+
 module Data.Logic.Classical.Semantics.InnocentExclusion where
 
-import Data.Logic.Classical.Alternatives
-
-import Data.Logic.Classical.Semantics hiding (testExpr)
+import Data.Logic.Classical.Semantics ( isContradiction )
 import Data.Logic.Classical.Syntax
-import Data.Logic.Classical.Parser
+    ( toExpr, BOp(Or, And), CExpr, Expr(Binary, Unary), UOp(Not), Var )
+import Data.Set as S
+    ( Set,
+      filter,
+      foldr,
+      fromList,
+      isProperSubsetOf,
+      member,
+      powerSet,
+      toList,
+      unions )
 
 -- Checks whether or not a set of propositions is mutually consistent.
-isConsistent :: [CExpr] -> Bool
+isConsistent :: Set CExpr -> Bool
 isConsistent exprs = not . isContradiction $ conjoin exprs
-
--- >>> isConsistent <$> (sequence [parseExpr "~a", parseExpr "a&b"])
--- Right False
 
 -- I really should change this to constants
 tautExpr :: CExpr
 tautExpr = Binary Or (toExpr 'a') (Unary Not (toExpr 'a'))
 
-conjoin :: [CExpr] -> CExpr
-conjoin = foldr (Binary And) tautExpr
-
-powerset :: [a] -> [[a]]
-powerset [] = [[]]
-powerset (x:xs) = [x:ps | ps <- powerset xs] ++ powerset xs
+conjoin :: Set CExpr -> CExpr
+conjoin = S.foldr (Binary And) tautExpr
 
 -- a function from a proposition and a set of alternatives to the compatible subsets
-compatible :: CExpr -> [CExpr] -> [[CExpr]]
-compatible prej altSet = filter isConsistent [prej:(Unary Not <$> alts') | alts' <- powerset altSet]
+compatible :: CExpr -> Set CExpr -> Set (Set CExpr)
+compatible prej altSet =
+    S.filter isConsistent
+        $   S.fromList
+        $   S.fromList
+        <$> [ prej : (Unary Not <$> S.toList alts')
+            | alts' <- S.toList $ powerSet altSet
+            ]
 
 testOr :: Expr Var
 testOr = Binary Or (toExpr 'a') (toExpr 'b')
 
-maxAlts :: [[CExpr]] -> [[CExpr]]
-maxAlts = undefined
+maxSets :: Ord a => Set (Set a) -> Set (Set a)
+maxSets compAlts = S.fromList $ concat
+    [ [ altSet | not $ any (\altSet' -> altSet `isProperSubsetOf` altSet') compAlts ]
+    | altSet <- S.toList compAlts
+    ]
 
--- >>> compatible testOr (altsS testOr)
--- [[(a ∨ b),¬ (a),¬ ((a ∧ b))],[(a ∨ b),¬ (a)],[(a ∨ b),¬ (b),¬ ((a ∧ b))],[(a ∨ b),¬ (b)],[(a ∨ b),¬ ((a ∧ b))],[(a ∨ b)]]
+ieAlts :: CExpr -> Set CExpr -> Set CExpr
+ieAlts prej altset = let
+  maxCompSets = maxSets $ compatible prej altset
+  in
+  unions [ S.fromList [ie | ie <- S.toList maxCompSet, all (\p -> ie `S.member` p) maxCompSets ] | maxCompSet <- S.toList maxCompSets ]
+
+exhIE :: CExpr -> Set CExpr -> CExpr
+exhIE p altSet = conjoin (ieAlts p altSet)
