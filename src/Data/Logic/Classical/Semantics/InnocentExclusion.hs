@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE MonadComprehensions #-}
 
 module Data.Logic.Classical.Semantics.InnocentExclusion where
 
