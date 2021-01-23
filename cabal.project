@@ -1,0 +1,6 @@
+packages: .
+
+source-repository-package
+    type: git
+    location: https://github.com/pniedzielski/compdata
+    tag: 73cffef00e68cf72bd2f2dfaa05bdcf8d0aa0c92
