@@ -1,9 +1,13 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ParallelListComp #-}
 
 module Data.Logic.Final where
 
 import           Control.Applicative            ( Applicative(liftA2) )
+import           Control.Monad                  ( replicateM )
+import qualified Data.Map                      as M
+import qualified Data.Set                      as S
 
 -----------------------------------------------------
 -- A tagless final encoding of boolean expressions --
@@ -82,15 +86,15 @@ stepEval ps = [ (s, t) | (A s, t) <- ps ]
 ----------------------------------------------
 
 -- We treat variables as integers.
-type Atom = Int
+type Var = Int
 
 -- An assignment is a function from variables to boolean values.
-type Assignment = Atom -> Bool
+type Assignment = M.Map Var Bool
 
 -- 'at' maps variables to expressions of propositional logic, which compose via the boolean operators.
 -- N.b., we don't need to define the boolean operators again for propositional logic.
 class BoolSYM s => PropSYM s where
-  at :: Atom -> s
+  at :: Var -> s
 
 -- Printing variables as ascii/unicode.
 instance PropSYM A where
@@ -99,216 +103,47 @@ instance PropSYM A where
 instance PropSYM U where
   at = U . show
 
--- Interpretation parameterized to an assignment.
-instance BoolSYM (Assignment -> Bool) where
-  top  = pure top
-  bot  = pure bot
-  neg  = fmap neg
-  conj = liftA2 conj
+instance BoolSYM (S.Set Var) where
+  top  = S.empty
+  neg  = id
+  conj = S.union
+  disj = S.union
 
--- Variables are interpreted relative to an input assignment
-instance PropSYM (Assignment -> Bool) where
-  at n f = f n
+instance PropSYM (S.Set Var) where
+  at n = S.singleton n
 
--- evaluating formulas of propositional logic.
-evalProp :: (Assignment -> Bool) -> Assignment -> Bool
-evalProp = id
+variables :: S.Set Var -> [Var]
+variables = S.toList
 
-instance BoolSYM [Atom] where
-  top  = []
+instance BoolSYM [Assignment] where
+  top  = mempty
   neg  = id
   conj = (++)
+  disj = (++)
 
-instance PropSYM [Atom] where
-  at = pure
+instance PropSYM [Assignment] where
+  at n =
+    let vars = variables (at n)
+    in  [ M.fromList [ (v, t) | v <- vars | t <- ts ]
+        | ts <- replicateM (length vars) [True, False]
+        ]
 
--- Computing the variables in a formula.
-variables :: [Atom] -> [Atom]
-variables = id
+universe :: [Assignment] -> [Assignment]
+universe = id
 
+instance BoolSYM (Assignment -> Maybe Bool) where
+  top = const $ pure top
+  neg p = (fmap . fmap) neg p
+  conj p q = (liftA2 . liftA2) conj p q
+  disj p q = (liftA2 . liftA2) disj p q
 
+instance PropSYM (Assignment -> Maybe Bool) where
+  at n g = M.lookup n g
 
+evalProp :: (Assignment -> Maybe Bool) -> Assignment -> Maybe Bool
+evalProp = id
 
+tf1 = at 1 `conj` at 2 `conj` at 1
 
-
-
-
-----------------------------------------------------
--- modular extension to an exhaustification logic --
-----------------------------------------------------
-
-newtype Exh = Exh (Assignment -> Bool)
-
-instance (BoolSYM a, BoolSYM (Alts a)) => BoolSYM (a,Alts a,a) where
-  top = (top, top, top)
-  neg (a, bs, c) = (neg a, neg bs, neg c)
-  disj (a, ps, c) (p, qs, t) =
-    ( disj a  p
-    , disj ps qs
-    , (a `disj` p) `conj` foldr conj top (neg <$> (disj ps qs))
-    )
-  conj (a, ps, c) (p, qs, t) = (conj a p, conj ps qs, conj c t)
-
-exh :: (BoolSYM a, BoolSYM (Alts a)) => (a, Alts a, a) -> a
-exh (_, _, exh) = exh
-
-tf4 = top `disj` top
-
--- >>> eval (exh tf4)
--- False
-
-
--- class PropSYM s => ExhSYM s where
---   exh :: s -> s
-
-newtype Alts s = Alts [s] deriving (Functor,Applicative,Foldable)
-
-instance BoolSYM a => BoolSYM (Alts a) where
-  top = pure top
-  bot = pure bot
-  neg p = neg <$> p
-  conj p q = liftA2 disj p q
-  disj p q = liftA2 conj p q
-
-
-tf3 = at 1 `disj` at 2
-
--- >>> viewA tf3
--- "(1|2)"
-
--- >>> viewA $ foldr conj top (neg <$> formalAlts tf3)
--- "(~(1&2)&T)"
-
--- >>>
-
-
--- >>> viewA $ top `conj` (at 1)
--- "(T&1)"
-
--- class PropSYM s where
---   top :: s
---   bot :: s
---   at :: Atom -> s
---   neg :: s -> s
---   conj :: s -> s -> s
---   disj :: s -> s -> s
-
--- type Viewable = String
-
--- instance PropSYM Viewable where
---   top = "T"
---   bot = "F"
---   at = show
---   neg = (++) "~"
---   conj t u = "(" ++ t ++ "&" ++ u ++ ")"
---   disj t u = "(" ++ t ++ "|" ++ u ++ ")"
-
--- view :: Viewable -> Viewable
--- view = id
-
--- tf1 :: PropSYM s => s
--- tf1 = at 1 `conj` top
-
--- instance PropSYM [Atom] where
---   top = []
---   bot = []
---   at = pure
---   neg = id
---   conj = (++)
---   disj = (++)
-
--- variables :: [Atom] -> [Atom]
--- variables = id
-
--- newtype Alt a = Alt [a] deriving (Functor,Applicative,Monad,Show,Foldable)
-
--- instance PropSYM a => PropSYM (Alt a) where
---   top = Alt [top]
---   bot = Alt [bot]
---   at n = Alt [at n]
---   neg (Alt alts) = Alt [neg alt | alt <- alts]
---   conj (Alt alts) (Alt alts') = Alt $ [disj psi psi' | psi <- alts, psi' <- alts']
---   disj (Alt alts) (Alt alts') = Alt $ [conj psi psi' | psi <- alts, psi' <- alts']
-
--- alts :: PropSYM a => Alt a -> Alt a
--- alts = id
-
--- instance PropSYM a => PropSYM (a,Alt a) where
---   top = (top,top)
---   bot = (bot,bot)
---   at n = (at n, at n)
---   neg (a,b) = (neg a, neg b)
---   conj (a,b) (c,d) = (conj a c, conj b d)
---   disj (a,b) (c,d) = (disj a c, disj b d)
-
--- pointed :: PropSYM a => (a, Alt a) -> (a, Alt a)
--- pointed = id
-
-
--- tf2 :: PropSYM s => s
--- tf2 = at 1 `disj` at 2 `disj` at 3
-
--- -- >>> view tf2
--- -- "((1|2)|3)"
--- -- >>> variables tf2
--- -- [1,2,3]
--- -- >>> view <$> alts tf2
--- -- Alt ["((1&2)&3)","((1&2)|3)","((1|2)&3)","((1|2)|3)","(1&3)","(1|3)","(2&3)","(2|3)","(1&2)","(1|2)","1","2","3"]
-
--- type Assignment = Int -> Bool
-
--- instance PropSYM (Assignment -> Bool) where
---   top = pure True
---   bot = pure False
---   at n g = g n
---   neg = fmap not
---   conj = liftA2 (&&)
---   disj = liftA2 (||)
-
--- instance PropSYM a => PropSYM (Assignment -> Bool,Alt a) where
---   top = (top,top)
---   bot = (bot,bot)
---   at n = (at n,at n)
---   neg (a,b) = (neg a, neg b)
---   conj (a,b) (c,d) = (conj a c, conj b d)
---   disj (a,b) (c,d) = (disj a c, disj b d)
-
--- eval :: (Assignment -> Bool) -> Assignment -> Bool
--- eval = id
-
--- g1 :: Assignment
--- g1 1 = True
--- g1 _ = False
-
--- ----------------------------------
--- -- extending the logic with exh --
--- ----------------------------------
-
--- class PropSYM s => ExhSYM s where
---   exh :: s -> s
-
--- instance ExhSYM a => ExhSYM (Alt a) where
---   exh (Alt alts) = Alt [exh alt | alt <- alts]
-
--- instance ExhSYM a => ExhSYM (a,Alt a) where
---   exh (p,qs) = (p,qs)
-
--- instance ExhSYM Viewable where
---   exh s = "Exh " ++ s
-
--- -- >>> view $ (fst $ pointed tf1)
--- -- "(1&T)"
-
--- conjoinAlts :: PropSYM b => Alt b -> b
--- conjoinAlts = foldr (conj) (top)
-
--- exhaust :: PropSYM a => (a, Alt a) -> (a, Alt a)
--- exhaust (p,q) = (p `conj` conjoinAlts (neg <$> q),q)
-
--- evalAlts :: Alt (Assignment -> Bool) -> Alt (Assignment -> Bool)
--- evalAlts = id
-
--- -- >>> view tf2
--- -- "((1|2)|3)"
--- -- >>> view <$> alts tf2
--- -- Alt ["((1&2)&3)"]
+-- >>> universe tf1
+-- [fromList [(1,True)],fromList [(1,False)],fromList [(2,True)],fromList [(2,False)],fromList [(1,True)],fromList [(1,False)]]
