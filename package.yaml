@@ -13,6 +13,7 @@ dependencies:
 - { name: "parsec", version: '==3.1.14.0' }
 - { name: "table-layout", version: '==0.9.1.0'}
 - { name: "compdata", version: '==0.12'}
+- { name: "bifunctors", version: '==5.5.9'}
 
 default-extensions:
   - GADTs
