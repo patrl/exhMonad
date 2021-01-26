@@ -145,47 +145,51 @@ universe vs =
   | ts <- replicateM (length vs) [True, False]
   ]
 
+-- We want to use a function from g to maybe a, since Map doesn't have an applicaative instance.
+type Proposition = Assignment -> Maybe Bool
+
 -- Note that we're just composing applicative functors here.
-instance BoolSYM (Assignment -> Maybe Bool) where
+instance BoolSYM Proposition where
   top = (pure . pure) top
   neg p = (fmap . fmap) neg p
   conj p q = (liftA2 . liftA2) conj p q
   disj p q = (liftA2 . liftA2) disj p q
 
-instance PropSYM (Assignment -> Maybe Bool) where
+instance PropSYM Proposition where
   at n g = M.lookup n g
 
-evalProp :: (Assignment -> Maybe Bool) -> Assignment -> Maybe Bool
+evalProp :: Proposition -> Proposition
 evalProp = id
 
-verifiers :: (S.Set Var, Assignment -> Maybe Bool) -> S.Set Assignment
+verifiers :: (S.Set Var, Proposition) -> S.Set Assignment
 verifiers (vs, p) = S.fromList [ g | g <- universe vs, p g == Just True ]
 
-falsifiers :: (S.Set Var, Assignment -> Maybe Bool) -> S.Set Assignment
+falsifiers :: (S.Set Var, Proposition) -> S.Set Assignment
 falsifiers (vs, p) = S.fromList [ g | g <- universe vs, p g == Just False ]
 
-entails
-  :: (S.Set Var, Assignment -> Maybe Bool)
-  -> (S.Set Var, Assignment -> Maybe Bool)
-  -> Bool
+entails :: (S.Set Var, Proposition) -> (S.Set Var, Proposition) -> Bool
 entails (vs, p) (us, q) =
   let vs' = vs `S.union` us
   in  verifiers (vs', p) `S.isSubsetOf` verifiers (vs', q)
 
+equiv :: (S.Set Var, Proposition) -> (S.Set Var, Proposition) -> Bool
+equiv (vs, p) (us, q) =
+  let vs' = vs `S.union` us in verifiers (vs', p) == verifiers (vs', q)
+
 data PropType = Tautology | Contradiction | Contingency deriving (Eq,Show)
 
-propType :: (S.Set Var, Assignment -> Maybe Bool) -> PropType
+propType :: (S.Set Var, Proposition) -> PropType
 propType (vs, p) | universe vs == S.toList (verifiers (vs, p)) = Tautology
                  | universe vs == S.toList (falsifiers (vs, p)) = Contradiction
                  | otherwise = Contingency
 
-isTautology :: (S.Set Var, Assignment -> Maybe Bool) -> Bool
+isTautology :: (S.Set Var, Proposition) -> Bool
 isTautology (vs, p) = propType (vs, p) == Tautology
 
-isContradiction :: (S.Set Var, Assignment -> Maybe Bool) -> Bool
+isContradiction :: (S.Set Var, Proposition) -> Bool
 isContradiction (vs, p) = propType (vs, p) == Contradiction
 
-isContingency :: (S.Set Var, Assignment -> Maybe Bool) -> Bool
+isContingency :: (S.Set Var, Proposition) -> Bool
 isContingency (vs, p) = propType (vs, p) == Contingency
 
 
@@ -211,8 +215,7 @@ alts (AltScalar ss) = ss
 viewAlts :: AltScalar A -> [String]
 viewAlts (AltScalar as) = viewA <$> as
 
--- We can blindly negate structural alternatives fairly easily
-
+-- We can blindly negate structural alternatives fairly easily, but this isn't enough.
 exhaust :: PropSYM p => (AltScalar p, p) -> p
 exhaust (AltScalar as, p) = p `conj` conjoinNegs as
 
@@ -222,18 +225,9 @@ conjoinNegs as = foldr conj top (neg <$> as)
 tf1 :: PropSYM s => s
 tf1 = at 1 `disj` at 2
 
--- >>> viewA tf1
--- "(1|2)"
-
--- >>> viewAlts tf1
--- ["(1&2)"]
-
--- >>> viewA $ exhaust tf1
--- "((1|2)&(~(1&2)&T))"
-
--------------------------------
--- exhaustification operator --
--------------------------------
+----------------------------
+-- Exhaustification logic --
+----------------------------
 
 class (PropSYM s) => ExhSYM s where
   exh :: s -> s
@@ -241,23 +235,51 @@ class (PropSYM s) => ExhSYM s where
 instance ExhSYM A where
   exh (A p) = A $ "O" ++ p
 
+instance ExhSYM U where
+  exh (U p) = U $ "𝒪" ++ p
+
 -- Boilperplate duplicator instances.
 
 instance (ExhSYM a, ExhSYM b) => ExhSYM (a,b) where
   exh p = bipure exh exh <<*>> p
 
-instance (ExhSYM a, ExhSYM b, ExhSYM c) => ExhSYM (a,b,c) where
-  exh (s, t, u) = (exh s, exh t, exh u)
 
 -- Scalar alternatives foe exhaustified formulas.
 instance ExhSYM s => ExhSYM (AltScalar s) where
   exh p = exh <$> p
 
+--- Not sure this quite works yet.
+excludable
+  :: (S.Set Var, Proposition, AltScalar (Proposition, A)) -> [(Proposition, A)]
+excludable (vs, p, AltScalar as) =
+  [ (a, s) | (a, s) <- as, (not . isContradiction) (vs, p `conj` a) ]
+
+instance ExhSYM (S.Set Var, Proposition, AltScalar (Proposition,A)) where
+  exh (vs, p, as) =
+    ( vs
+    , p `conj` foldr conj top (neg <$> [ a | (a, _) <- excludable (vs, p, as) ])
+    , as
+    )
+
 tf2 :: ExhSYM s => s
 tf2 = exh tf1
 
--- >>> viewExhaust tf2
--- "((1|2)&(~(1&2)&T))"
+tf3 :: ExhSYM s => s
+tf3 = tf2 `conj` at 3
+
+verifiersExh
+  :: (S.Set Var, Proposition, AltScalar (Proposition, A)) -> S.Set Assignment
+verifiersExh (vs, p, _) = verifiers (vs, p)
+
+-- >>> viewAlts tf2
+-- ["O(1&2)"]
+
+-- >>> excludable tf3
+-- No instance for (Show (Assignment -> Maybe Bool))
+--
+--   (maybe you haven't applied a function to enough arguments?)
+--
+--   (maybe you haven't applied a function to enough arguments?)
 
 -- >>> viewExhaust tf3
 -- "((3|((1|2)&(~(1&2)&T)))&(~(3&O(1&2))&T))"
