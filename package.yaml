@@ -12,8 +12,7 @@ dependencies:
 - { name: "containers" }
 - { name: "parsec", version: '==3.1.14.0' }
 - { name: "table-layout", version: '==0.9.1.0'}
-- { name: "compdata", version: '==0.12'}
-- { name: "bifunctors", version: '==5.5.9'}
+- { name: "recursion-schemes", version: '==5.1.3'}
 
 default-extensions:
   - GADTs
@@ -46,6 +45,4 @@ executable:
   ghc-options:
     - -threaded
   dependencies:
-    - exhMonad 
-    - { name: "brick", version: '==0.58.1' }
-
+    - exhMonad
