@@ -10,12 +10,12 @@ module Data.Logic.Classical.SyntaxRS where
 
 import           Control.Applicative            ( Applicative(liftA2) )
 import           Control.Monad                  ( replicateM )
-import           Data.Functor.Foldable          (Recursive(cata) )
+import           Data.Functor.Foldable          (Recursive(para, cata) )
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 import qualified Data.IntMap.Strict            as IntM
 import qualified Data.Map.Strict               as M
 import qualified Data.Set                      as S
-import Data.Maybe (fromJust)
+import Control.Arrow ((&&&))
 
 -- A datatype for unary operators.
 data UOp = Neg | Exh | Box | Loz
@@ -131,7 +131,8 @@ altScalar :: PropExpr -> [PropExpr]
 altScalar = cata $ \case
   (SimpleF v) -> pure $ Simple v
   (UnaryF op as) -> Unary op <$> as
-  (BinaryF _ as bs) -> concat [liftA2 (Binary op) as bs | op <- [Conj,Disj]]
+  (BinaryF Conj as bs) -> (liftA2 $ Binary Conj) as bs
+  (BinaryF Disj as bs) -> concat [liftA2 (Binary op) as bs | op <- [Conj]]
 
 altSauerland :: PropExpr -> (PropExpr,[PropExpr])
 altSauerland = cata $ \case
@@ -160,7 +161,14 @@ tf3 :: Expr Var
 tf3 = Unary Neg tf1
 
 -- >>> altSauerland tf3
--- (~(1|(2|(3|4))),[~(1&(2&(3&4))),~(1&(2&(3|4))),~(1&(2&3)),~(1&(2&4)),~(1&(2|(3&4))),~(1&(2|(3|4))),~(1&(2|3)),~(1&(2|4)),~(1&2),~(1&(3&4)),~(1&(3|4)),~(1&3),~(1&4),~(1|(2&(3&4))),~(1|(2&(3|4))),~(1|(2&3)),~(1|(2&4)),~(1|(2|(3&4))),~(1|(2|(3|4))),~(1|(2|3)),~(1|(2|4)),~(1|2),~(1|(3&4)),~(1|(3|4)),~(1|3),~(1|4),~1,~(2&(3&4)),~(2&(3|4)),~(2&3),~(2&4),~(2|(3&4)),~(2|(3|4)),~(2|3),~(2|4),~2,~(3&4),~(3|4),~3,~4])
+
+tf4 :: Expr Var
+tf4 = Unary Exh (Binary Disj (toExpr 1) (toExpr 2))
+
+
+
+-- >>> tf4
+-- 𝒪(1|2)
 
 -----------------
 -- modal logic --
